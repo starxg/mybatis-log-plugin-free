@@ -1,0 +1,44 @@
+plugins {
+    id 'java'
+    id 'org.jetbrains.intellij' version '0.6.5'
+}
+
+group 'com.starxg'
+version '1.0.0'
+
+sourceCompatibility = 1.8
+
+repositories {
+    maven { url 'https://maven.aliyun.com/repository/central/'}
+    maven { url 'https://maven.aliyun.com/repository/public/' }
+    maven { url 'https://maven.aliyun.com/repository/google/' }
+    maven { url 'https://maven.aliyun.com/repository/jcenter/'}
+    maven { url 'https://maven.aliyun.com/repository/gradle-plugin'}
+    //    mavenCentral()
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}
+
+intellij {
+    version '2018.3.6'
+//    version '2020.2'
+//    version '2021.2'
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+patchPluginXml {
+    sinceBuild = '183'
+//    sinceBuild = '145.2070'
+    untilBuild = ''
+    changeNotes """
+<dl>
+    <dt><b>${project.getVersion()}</b></dt>
+    <dd>Restore mybatis sql log</dd>
+</dl>
+      """
+}
