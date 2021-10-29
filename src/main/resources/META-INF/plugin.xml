@@ -1,6 +1,6 @@
 <idea-plugin>
 	<id>com.starxg.mybatis-log-plugin-free</id>
-	<name>MyBatis Log Plugin Free</name>
+	<name>MyBatis Log Free</name>
 
 	<vendor email="591269@gmail.com" url="http://github.com/starxg">starxg</vendor>
 
