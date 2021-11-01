@@ -7,8 +7,13 @@
 	<description><![CDATA[
 	Restore mybatis sql log to original whole executable sql.
 	<br/>
-	<img width="350" height="161" src="https://blog.starxg.com/img/2021/10/2.png"  alt=""/>
+	<img width="350" height="160" src="https://blog.starxg.com/img/2021/10/2.png"  alt=""/>
 	<br/>
+	<b>usage:</>
+	<ol>
+		<li>Click Tool -> MyBatis Log Free</li>
+		<li>Click MyBatis Log Free in the console</li>
+	</ol>
     <a href="http://github.com/starxg/mybatis-log-plugin-free">github</a> | <a href="https://github.com/starxg/mybatis-log-plugin-free/issues">issues</a> | <a href="http://ko-fi.com/huangxingguang">donate</a>
     ]]></description>
 
