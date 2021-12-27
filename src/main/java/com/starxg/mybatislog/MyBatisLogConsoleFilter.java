@@ -20,7 +20,7 @@ public class MyBatisLogConsoleFilter implements Filter {
 
     public static final String PREPARING_KEY = MyBatisLogConsoleFilter.class.getName() + ".Preparing";
     public static final String PARAMETERS_KEY = MyBatisLogConsoleFilter.class.getName() + ".Parameters";
-    public static final String KEYWORDS = MyBatisLogConsoleFilter.class.getName() + ".Keywords";
+    public static final String KEYWORDS_KEY = MyBatisLogConsoleFilter.class.getName() + ".Keywords";
 
     private static final char MARK = '?';
 

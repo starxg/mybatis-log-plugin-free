@@ -17,6 +17,8 @@ import java.util.*;
  */
 public class BasicFormatter {
 
+    public static final String FORMAT_KEY = BasicFormatter.class.getName() + ".FORMAT";
+
     // MOD: from org.hibernate.internal.util.StringHelper
     private static final String WHITESPACE = " \n\r\f\t";
 

@@ -8,7 +8,7 @@ import org.junit.Test;
 /**
  * DemoTest
  * 
- * @author huangxingguang@lvmama.com
+ * @author huangxingguang
  */
 public class DemoTest {
     private static final String PARAM_TYPE_REGEX = "\\(String\\),|\\(Timestamp\\),{0,1}|\\(Date\\),{0,1}|\\(Time\\),{0,1}|\\(LocalDate\\),{0,1}|\\(LocalTime\\),{0,1}|\\(LocalDateTime\\),{0,1}|\\(Byte\\),{0,1}|\\(Short\\),{0,1}|\\(Integer\\),{0,1}|\\(Long\\),{0,1}|\\(Float\\),{0,1}|\\(Double\\),{0,1}|\\(BigDecimal\\),{0,1}|\\(Boolean\\),{0,1}|\\(Null\\),{0,1}";

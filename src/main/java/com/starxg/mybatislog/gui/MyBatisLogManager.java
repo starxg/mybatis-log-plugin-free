@@ -1,5 +1,6 @@
 package com.starxg.mybatislog.gui;
 
+import static com.starxg.mybatislog.BasicFormatter.FORMAT_KEY;
 import static com.starxg.mybatislog.MyBatisLogConsoleFilter.*;
 
 import java.awt.*;
@@ -31,10 +32,7 @@ import com.intellij.execution.ui.RunnerLayoutUi;
 import com.intellij.icons.AllIcons;
 import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.actionSystem.ActionGroup;
-import com.intellij.openapi.actionSystem.AnAction;
-import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.actionSystem.DefaultActionGroup;
+import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.actions.ScrollToTheEndToolbarAction;
@@ -75,6 +73,13 @@ public class MyBatisLogManager implements Disposable {
     private volatile String preparing;
     private volatile String parameters;
     private volatile boolean running = false;
+
+    /**
+     * true: format ( default )
+     * false: disable format
+     */
+    private volatile boolean sqlFormat;
+
     private final List<String> keywords = new ArrayList<>(0);
 
     private MyBatisLogManager(@NotNull Project project) {
@@ -108,7 +113,9 @@ public class MyBatisLogManager implements Disposable {
         final PropertiesComponent propertiesComponent = PropertiesComponent.getInstance(project);
         this.preparing = propertiesComponent.getValue(PREPARING_KEY, "Preparing: ");
         this.parameters = propertiesComponent.getValue(PARAMETERS_KEY, "Parameters: ");
-        resetKeywords(propertiesComponent.getValue(KEYWORDS, StringUtils.EMPTY));
+        resetKeywords(propertiesComponent.getValue(KEYWORDS_KEY, StringUtils.EMPTY));
+
+        this.sqlFormat = propertiesComponent.getBoolean(FORMAT_KEY, true);
 
         messageBusConnection.subscribe(ToolWindowManagerListener.TOPIC, new ToolWindowManagerListener() {
             @Override
@@ -152,6 +159,8 @@ public class MyBatisLogManager implements Disposable {
         });
 
         actionGroup.add(new ScrollToTheEndToolbarAction(consoleView.getEditor()));
+
+        actionGroup.add(new PrettyPrintToggleAction(this));
 
         actionGroup.add(new DumbAwareAction("Clear All", "Clear All", AllIcons.Actions.GC) {
             @Override
@@ -208,7 +217,12 @@ public class MyBatisLogManager implements Disposable {
         consoleView.print(String.format("-- %s -- %s\n", counter.incrementAndGet(), logPrefix),
                 ConsoleViewContentType.USER_INPUT);
 
-        consoleView.print(String.format("%s\n", FORMATTER.format(sql)), ConsoleViewContentType.ERROR_OUTPUT);
+        consoleView.print(String.format("%s\n", isFormat() ? FORMATTER.format(sql) : sql),
+                ConsoleViewContentType.ERROR_OUTPUT);
+    }
+    
+    private boolean isFormat() {
+        return sqlFormat;
     }
 
     public void run() {
@@ -347,11 +361,42 @@ public class MyBatisLogManager implements Disposable {
 
             component.setValue(PREPARING_KEY, preparing);
             component.setValue(PARAMETERS_KEY, parameters);
-            component.setValue(KEYWORDS, dialog.getKeywords());
+            component.setValue(KEYWORDS_KEY, dialog.getKeywords());
 
             manager.preparing = preparing;
             manager.parameters = parameters;
             manager.resetKeywords(dialog.getKeywords());
+        }
+
+    }
+
+    private static class PrettyPrintToggleAction extends ToggleAction {
+        private final MyBatisLogManager manager;
+
+        PrettyPrintToggleAction(MyBatisLogManager manager) {
+            super("Pretty Print", "Pretty Print", Icons.PRETTY_PRINT);
+            this.manager = manager;
+        }
+
+        @Override
+        public boolean isSelected(@NotNull AnActionEvent e) {
+            if (Objects.isNull(e.getProject())) {
+                return false;
+            }
+
+            return manager.isFormat();
+        }
+
+        @Override
+        public void setSelected(@NotNull AnActionEvent e, boolean state) {
+            if (Objects.isNull(e.getProject())) {
+                return;
+            }
+
+            manager.sqlFormat = state;
+
+            PropertiesComponent.getInstance(e.getProject()).setValue(FORMAT_KEY, String.valueOf(state));
+
         }
 
     }
