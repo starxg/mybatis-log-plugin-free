@@ -15,7 +15,7 @@ import com.intellij.ui.Gray;
 /**
  * FilterDialogWrapper
  * 
- * @author huangxingguang@lvmama.com
+ * @author huangxingguang
  */
 public class FilterDialogWrapper extends DialogWrapper {
     private JTextField txtPreparing;
