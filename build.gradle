@@ -38,6 +38,10 @@ patchPluginXml {
     changeNotes """
 <dl>
     <dt><b>${project.getVersion()}</b></dt>
+    <dd>support disable formatting</dd>
+</dl>
+<dl>
+    <dt><b>1.0.0</b></dt>
     <dd>Restore mybatis sql log</dd>
 </dl>
       """
