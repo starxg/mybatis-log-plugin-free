@@ -2,7 +2,7 @@
 
 Restore mybatis sql log to original whole executable sql.
 
-<img width="400" src="https://blog.starxg.com/img/2021/10/2.png"  alt=""/>
+<img width="400" src="https://blog.starxg.com/img/2021/10/1-2-2.png"  alt=""/>
 
 ---
 

@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'com.starxg'
-version '1.1.0'
+version '1.2.0'
 
 sourceCompatibility = 1.8
 
@@ -38,10 +38,15 @@ patchPluginXml {
     changeNotes """
 <dl>
     <dt><b>${project.getVersion()}</b></dt>
+    <dd>support jump</dd>
+    <dd>bug fixes and improvements</dd>
+</dl>
+<dl>
+    <dt>1.1.0</dt>
     <dd>support disable formatting</dd>
 </dl>
 <dl>
-    <dt><b>1.0.0</b></dt>
+    <dt>1.0.0</dt>
     <dd>Restore mybatis sql log</dd>
 </dl>
       """

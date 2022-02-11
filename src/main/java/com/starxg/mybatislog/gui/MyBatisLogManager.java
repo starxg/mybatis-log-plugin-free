@@ -1,21 +1,5 @@
 package com.starxg.mybatislog.gui;
 
-import static com.starxg.mybatislog.BasicFormatter.FORMAT_KEY;
-import static com.starxg.mybatislog.MyBatisLogConsoleFilter.*;
-
-import java.awt.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import javax.swing.*;
-
-import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import com.intellij.execution.DefaultExecutionResult;
 import com.intellij.execution.ExecutionManager;
 import com.intellij.execution.Executor;
@@ -32,16 +16,23 @@ import com.intellij.execution.ui.RunnerLayoutUi;
 import com.intellij.icons.AllIcons;
 import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.actionSystem.*;
-import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.actionSystem.ActionGroup;
+import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.DefaultActionGroup;
+import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.actions.ScrollToTheEndToolbarAction;
 import com.intellij.openapi.editor.actions.ToggleUseSoftWrapsToolbarAction;
+import com.intellij.openapi.editor.event.DocumentEvent;
+import com.intellij.openapi.editor.event.DocumentListener;
 import com.intellij.openapi.editor.impl.softwrap.SoftWrapAppliancePlaces;
-import com.intellij.openapi.project.DumbAwareAction;
+import com.intellij.openapi.editor.markup.HighlighterTargetArea;
+import com.intellij.openapi.editor.markup.TextAttributes;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.Key;
+import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.openapi.wm.ex.ToolWindowManagerListener;
@@ -49,7 +40,20 @@ import com.intellij.ui.content.Content;
 import com.intellij.util.messages.MessageBusConnection;
 import com.starxg.mybatislog.BasicFormatter;
 import com.starxg.mybatislog.Icons;
-import com.starxg.mybatislog.action.MyBatisLogAction;
+import com.starxg.mybatislog.action.*;
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import javax.swing.*;
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.starxg.mybatislog.MyBatisLogConsoleFilter.*;
 
 /**
  * MyBatisLogManager
@@ -59,26 +63,18 @@ import com.starxg.mybatislog.action.MyBatisLogAction;
 public class MyBatisLogManager implements Disposable {
 
     private static final Key<MyBatisLogManager> KEY = Key.create(MyBatisLogManager.class.getName());
-
-    private final ConsoleView consoleView;
-
     private static final BasicFormatter FORMATTER = new BasicFormatter();
 
-    private final Project project;
 
+    private final ConsoleView consoleView;
+    private final Project project;
     private final RunContentDescriptor descriptor;
 
     private final AtomicInteger counter;
-
     private volatile String preparing;
     private volatile String parameters;
     private volatile boolean running = false;
 
-    /**
-     * true: format ( default )
-     * false: disable format
-     */
-    private volatile boolean sqlFormat;
 
     private final List<String> keywords = new ArrayList<>(0);
 
@@ -115,8 +111,6 @@ public class MyBatisLogManager implements Disposable {
         this.parameters = propertiesComponent.getValue(PARAMETERS_KEY, "Parameters: ");
         resetKeywords(propertiesComponent.getValue(KEYWORDS_KEY, StringUtils.EMPTY));
 
-        this.sqlFormat = propertiesComponent.getBoolean(FORMAT_KEY, true);
-
         messageBusConnection.subscribe(ToolWindowManagerListener.TOPIC, new ToolWindowManagerListener() {
             @Override
             public void toolWindowRegistered(@NotNull String id) {
@@ -139,16 +133,50 @@ public class MyBatisLogManager implements Disposable {
 
     private ConsoleView createConsoleView() {
         TextConsoleBuilder consoleBuilder = TextConsoleBuilderFactory.getInstance().createBuilder(project);
-        return consoleBuilder.getConsole();
+        final ConsoleViewImpl console = (ConsoleViewImpl) consoleBuilder.getConsole();
+        // init editor
+        console.getComponent();
+
+        final Editor editor = console.getEditor();
+        final Document document = editor.getDocument();
+        document.addDocumentListener(new DocumentListener() {
+            @Override
+            public void beforeDocumentChange(@NotNull DocumentEvent event) {
+            }
+
+            @Override
+            public void documentChanged(@NotNull DocumentEvent event) {
+                final int textLength = document.getTextLength();
+                if(textLength < 1){
+                    return;
+                }
+
+                for (int i = event.getOffset(); i < textLength; ) {
+                    final int endOffset = document.getLineEndOffset(document.getLineNumber(i));
+                    final String text = document.getText(TextRange.create(i, endOffset));
+                    if (text.matches("^-- [\\d]+ -- .*")) {
+                        editor.getMarkupModel().addRangeHighlighter(i, i + 1, JumpSqlAction.SQL_LAYER, TextAttributes.ERASE_MARKER, HighlighterTargetArea.EXACT_RANGE);
+                    }
+                    i = endOffset + 1;
+                }
+
+            }
+        });
+        return console;
     }
 
     private ActionGroup createActionToolbar() {
-        final DefaultActionGroup actionGroup = new DefaultActionGroup();
-        actionGroup.add(new FilterAction(this));
-        actionGroup.add(new RerunAction());
-        actionGroup.add(new StopAction(this));
 
         final ConsoleViewImpl consoleView = (ConsoleViewImpl) this.consoleView;
+
+        final DefaultActionGroup actionGroup = new DefaultActionGroup();
+        actionGroup.add(new RerunAction());
+        actionGroup.add(new StopAction(this));
+        actionGroup.add(new FilterAction(this));
+        actionGroup.addSeparator();
+        actionGroup.add(new PreviousSqlAction(consoleView));
+        actionGroup.add(new NextSqlAction(consoleView));
+        actionGroup.addSeparator();
 
         actionGroup.add(new ToggleUseSoftWrapsToolbarAction(SoftWrapAppliancePlaces.CONSOLE) {
             @Nullable
@@ -159,19 +187,11 @@ public class MyBatisLogManager implements Disposable {
         });
 
         actionGroup.add(new ScrollToTheEndToolbarAction(consoleView.getEditor()));
-
-        actionGroup.add(new PrettyPrintToggleAction(this));
-
-        actionGroup.add(new DumbAwareAction("Clear All", "Clear All", AllIcons.Actions.GC) {
-            @Override
-            public void actionPerformed(@NotNull AnActionEvent e) {
-                MyBatisLogManager.this.consoleView.clear();
-            }
-        });
-
-        if (!PropertiesComponent.getInstance(project).getBoolean(DonateAction.class.getName(), false)) {
-            actionGroup.add(new DonateAction());
-        }
+        actionGroup.add(new PrettyPrintToggleAction());
+        actionGroup.addSeparator();
+        actionGroup.add(new ClearAllAction(consoleView));
+        actionGroup.addSeparator();
+        actionGroup.add(new DonateAction(PropertiesComponent.getInstance(project)));
 
         return actionGroup;
     }
@@ -214,15 +234,17 @@ public class MyBatisLogManager implements Disposable {
     }
 
     public void println(String logPrefix, String sql) {
+
         consoleView.print(String.format("-- %s -- %s\n", counter.incrementAndGet(), logPrefix),
                 ConsoleViewContentType.USER_INPUT);
 
-        consoleView.print(String.format("%s\n", isFormat() ? FORMATTER.format(sql) : sql),
+        consoleView.print(String.format("%s\n", isFormat() ? FORMATTER.format(sql) : StringUtils.removeEnd(sql, "\n")),
                 ConsoleViewContentType.ERROR_OUTPUT);
+
     }
-    
+
     private boolean isFormat() {
-        return sqlFormat;
+        return PropertiesComponent.getInstance(project).getBoolean(PrettyPrintToggleAction.class.getName());
     }
 
     public void run() {
@@ -319,10 +341,6 @@ public class MyBatisLogManager implements Disposable {
         return keywords;
     }
 
-    public ConsoleView getConsoleView() {
-        return consoleView;
-    }
-
     @Override
     public void dispose() {
 
@@ -366,59 +384,6 @@ public class MyBatisLogManager implements Disposable {
             manager.preparing = preparing;
             manager.parameters = parameters;
             manager.resetKeywords(dialog.getKeywords());
-        }
-
-    }
-
-    private static class PrettyPrintToggleAction extends ToggleAction {
-        private final MyBatisLogManager manager;
-
-        PrettyPrintToggleAction(MyBatisLogManager manager) {
-            super("Pretty Print", "Pretty Print", Icons.PRETTY_PRINT);
-            this.manager = manager;
-        }
-
-        @Override
-        public boolean isSelected(@NotNull AnActionEvent e) {
-            if (Objects.isNull(e.getProject())) {
-                return false;
-            }
-
-            return manager.isFormat();
-        }
-
-        @Override
-        public void setSelected(@NotNull AnActionEvent e, boolean state) {
-            if (Objects.isNull(e.getProject())) {
-                return;
-            }
-
-            manager.sqlFormat = state;
-
-            PropertiesComponent.getInstance(e.getProject()).setValue(FORMAT_KEY, String.valueOf(state));
-
-        }
-
-    }
-
-    private static class DonateAction extends AnAction {
-        DonateAction() {
-            super("Donate", "Donate", Icons.DONATE);
-        }
-
-        @Override
-        public void actionPerformed(@NotNull AnActionEvent e) {
-            if (Objects.isNull(e.getProject())) {
-                return;
-            }
-
-            ApplicationManager.getApplication().invokeLater(() -> e.getPresentation().setVisible(false));
-
-            new DonateDialogWrapper(e.getProject()).showAndGet();
-
-            final PropertiesComponent component = PropertiesComponent.getInstance(e.getProject());
-            component.setValue(DonateAction.class.getName(), true);
-
         }
 
     }
