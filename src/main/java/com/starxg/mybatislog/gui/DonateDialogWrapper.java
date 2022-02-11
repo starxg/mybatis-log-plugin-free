@@ -1,21 +1,19 @@
 package com.starxg.mybatislog.gui;
 
-import java.awt.*;
-import java.io.IOException;
-import java.util.Objects;
-
-import javax.imageio.ImageIO;
-import javax.swing.*;
-
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.ui.HyperlinkLabel;
 import com.intellij.util.ui.JBUI;
 import com.starxg.mybatislog.Icons;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import javax.imageio.ImageIO;
+import javax.swing.*;
+import java.awt.*;
+import java.io.IOException;
+import java.util.Objects;
 
 /**
  * DonateDialogWrapper
@@ -24,7 +22,7 @@ import com.starxg.mybatislog.Icons;
  */
 public class DonateDialogWrapper extends DialogWrapper {
 
-    protected DonateDialogWrapper(@Nullable Project project) {
+    public DonateDialogWrapper(@Nullable Project project) {
         super(project, false);
 
         init();
@@ -84,16 +82,26 @@ public class DonateDialogWrapper extends DialogWrapper {
 
             c = new GridBagConstraints();
             c.insets = JBUI.insets(10);
-            c.fill = GridBagConstraints.BOTH;
             c.gridy = 2;
-            c.gridwidth = GridBagConstraints.REMAINDER;
+            c.gridx = 0;
             final HyperlinkLabel kofi = new HyperlinkLabel();
             kofi.setIcon(Icons.DONATE);
             kofi.setHyperlinkText("Donate on Ko-fi");
             kofi.setUseIconAsLink(true);
             kofi.setHyperlinkTarget("https://ko-fi.com/huangxingguang");
-
             panel.add(kofi, c);
+
+            c = new GridBagConstraints();
+            c.insets = JBUI.insets(10);
+            c.gridy = 2;
+            c.gridx = 1;
+            final HyperlinkLabel paypal = new HyperlinkLabel();
+            paypal.setIcon(Icons.DONATE);
+            paypal.setHyperlinkText("Donate on PayPal");
+            paypal.setUseIconAsLink(true);
+            paypal.setHyperlinkTarget("https://paypal.me/huangxingguang");
+
+            panel.add(paypal, c);
 
         } catch (IOException e) {
             Logger.getInstance(getClass()).error(e.getMessage(), e);
