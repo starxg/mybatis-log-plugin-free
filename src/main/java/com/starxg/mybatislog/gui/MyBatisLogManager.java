@@ -13,11 +13,9 @@ import com.intellij.execution.ui.ConsoleView;
 import com.intellij.execution.ui.ConsoleViewContentType;
 import com.intellij.execution.ui.RunContentDescriptor;
 import com.intellij.execution.ui.RunnerLayoutUi;
-import com.intellij.icons.AllIcons;
 import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.ActionGroup;
-import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.editor.Document;
@@ -138,30 +136,8 @@ public class MyBatisLogManager implements Disposable {
         console.getComponent();
 
         final Editor editor = console.getEditor();
-        final Document document = editor.getDocument();
-        document.addDocumentListener(new DocumentListener() {
-            @Override
-            public void beforeDocumentChange(@NotNull DocumentEvent event) {
-            }
+        editor.getDocument().addDocumentListener(new RangeHighlighterDocumentListener(editor));
 
-            @Override
-            public void documentChanged(@NotNull DocumentEvent event) {
-                final int textLength = document.getTextLength();
-                if(textLength < 1){
-                    return;
-                }
-
-                for (int i = event.getOffset(); i < textLength; ) {
-                    final int endOffset = document.getLineEndOffset(document.getLineNumber(i));
-                    final String text = document.getText(TextRange.create(i, endOffset));
-                    if (text.matches("^-- [\\d]+ -- .*")) {
-                        editor.getMarkupModel().addRangeHighlighter(i, i + 1, JumpSqlAction.SQL_LAYER, TextAttributes.ERASE_MARKER, HighlighterTargetArea.EXACT_RANGE);
-                    }
-                    i = endOffset + 1;
-                }
-
-            }
-        });
         return console;
     }
 
@@ -301,7 +277,7 @@ public class MyBatisLogManager implements Disposable {
         return ToolWindowManager.getInstance(project).getToolWindow(MyBatisLogExecutor.TOOL_WINDOW_ID);
     }
 
-    private void resetKeywords(String text) {
+    public void resetKeywords(String text) {
 
         keywords.clear();
 
@@ -329,6 +305,14 @@ public class MyBatisLogManager implements Disposable {
         return preparing;
     }
 
+    public void setPreparing(String preparing) {
+        this.preparing = preparing;
+    }
+
+    public void setParameters(String parameters) {
+        this.parameters = parameters;
+    }
+
     public boolean isRunning() {
         return running;
     }
@@ -353,75 +337,33 @@ public class MyBatisLogManager implements Disposable {
 
     }
 
-    private static class FilterAction extends AnAction {
-        private final MyBatisLogManager manager;
 
-        FilterAction(MyBatisLogManager manager) {
-            super("Filter", "Filter", AllIcons.General.Filter);
-            this.manager = manager;
+    private static final class RangeHighlighterDocumentListener implements DocumentListener {
+
+        private final Editor editor;
+
+        private RangeHighlighterDocumentListener(Editor editor) {
+            this.editor = editor;
         }
 
         @Override
-        public void actionPerformed(@NotNull AnActionEvent e) {
-
-            if (Objects.isNull(e.getProject())) {
+        public void documentChanged(@NotNull DocumentEvent event) {
+            final Document document = event.getDocument();
+            final int textLength = document.getTextLength();
+            if (textLength < 1) {
                 return;
             }
 
-            final FilterDialogWrapper dialog = new FilterDialogWrapper(e.getProject(), manager);
-            if (!dialog.showAndGet()) {
-                return;
-            }
-
-            final PropertiesComponent component = PropertiesComponent.getInstance(e.getProject());
-            final String preparing = dialog.getPreparing();
-            final String parameters = dialog.getParameters();
-
-            component.setValue(PREPARING_KEY, preparing);
-            component.setValue(PARAMETERS_KEY, parameters);
-            component.setValue(KEYWORDS_KEY, dialog.getKeywords());
-
-            manager.preparing = preparing;
-            manager.parameters = parameters;
-            manager.resetKeywords(dialog.getKeywords());
-        }
-
-    }
-
-    private static class RerunAction extends AnAction {
-
-        RerunAction() {
-            super("Rerun", "Rerun", AllIcons.Actions.Restart);
-        }
-
-        @Override
-        public void actionPerformed(@NotNull AnActionEvent e) {
-            if (Objects.nonNull(e.getProject())) {
-                new MyBatisLogAction().rerun(e.getProject());
+            for (int i = event.getOffset(); i < textLength; ) {
+                final int endOffset = document.getLineEndOffset(document.getLineNumber(i));
+                final String text = document.getText(TextRange.create(i, endOffset));
+                if (text.matches("^-- [\\d]+ -- .*")) {
+                    editor.getMarkupModel().addRangeHighlighter(i, i + 1, JumpSqlAction.SQL_LAYER, TextAttributes.ERASE_MARKER, HighlighterTargetArea.EXACT_RANGE);
+                }
+                i = endOffset + 1;
             }
         }
-
     }
 
-    private static class StopAction extends AnAction {
-
-        private final MyBatisLogManager manager;
-
-        StopAction(MyBatisLogManager manager) {
-            super("Stop", "Stop", AllIcons.Actions.Suspend);
-            this.manager = manager;
-        }
-
-        @Override
-        public void actionPerformed(@NotNull AnActionEvent e) {
-            manager.stop();
-        }
-
-        @Override
-        public void update(@NotNull AnActionEvent e) {
-            e.getPresentation().setEnabled(manager.isRunning());
-        }
-
-    }
 
 }

@@ -20,11 +20,21 @@ public class PreviousSqlAction extends JumpSqlAction {
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
+
+        super.actionPerformed(e);
+
         final int offset = editor.getCaretModel().getPrimaryCaret().getOffset();
         if (offset <= 1) {
             return;
         }
-        jump(0, offset - 1, false);
+
+        final int movedOffset = jump(0, offset - 1, false);
+
+        if (movedOffset > -1) {
+            if (e.getInputEvent().isShiftDown()) {
+                editor.getSelectionModel().setSelection(offset, movedOffset);
+            }
+        }
     }
 
     @Override
