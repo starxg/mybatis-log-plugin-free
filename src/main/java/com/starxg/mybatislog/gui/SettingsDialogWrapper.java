@@ -1,5 +1,6 @@
 package com.starxg.mybatislog.gui;
 
+import com.intellij.execution.ui.ConsoleViewContentType;
 import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
@@ -73,10 +74,10 @@ public class SettingsDialogWrapper extends DialogWrapper {
 
         final PropertiesComponent propertiesComponent = PropertiesComponent.getInstance(project);
 
-        final int insertColorRGB = propertiesComponent.getInt(INSERT_SQL_COLOR_KEY, JBColor.RED.getRGB());
-        final int deleteColorRGB = propertiesComponent.getInt(DELETE_SQL_COLOR_KEY, JBColor.RED.getRGB());
-        final int updateColorRGB = propertiesComponent.getInt(UPDATE_SQL_COLOR_KEY, JBColor.RED.getRGB());
-        final int selectColorRGB = propertiesComponent.getInt(SELECT_SQL_COLOR_KEY, JBColor.RED.getRGB());
+        final int insertColorRGB = propertiesComponent.getInt(INSERT_SQL_COLOR_KEY, ConsoleViewContentType.ERROR_OUTPUT.getAttributes().getForegroundColor().getRGB());
+        final int deleteColorRGB = propertiesComponent.getInt(DELETE_SQL_COLOR_KEY, ConsoleViewContentType.ERROR_OUTPUT.getAttributes().getForegroundColor().getRGB());
+        final int updateColorRGB = propertiesComponent.getInt(UPDATE_SQL_COLOR_KEY, ConsoleViewContentType.ERROR_OUTPUT.getAttributes().getForegroundColor().getRGB());
+        final int selectColorRGB = propertiesComponent.getInt(SELECT_SQL_COLOR_KEY, ConsoleViewContentType.ERROR_OUTPUT.getAttributes().getForegroundColor().getRGB());
 
         insertColor.setBackground(new JBColor(insertColorRGB, insertColorRGB));
         deleteColor.setBackground(new JBColor(deleteColorRGB, deleteColorRGB));
@@ -145,10 +146,10 @@ public class SettingsDialogWrapper extends DialogWrapper {
         propertiesComponent.setValue(PARAMETERS_KEY, getParameters());
         propertiesComponent.setValue(KEYWORDS_KEY, getKeywords());
 
-        propertiesComponent.setValue(INSERT_SQL_COLOR_KEY, getInsertColorRGB(), JBColor.RED.getRGB());
-        propertiesComponent.setValue(DELETE_SQL_COLOR_KEY, getDeleteColorRGB(), JBColor.RED.getRGB());
-        propertiesComponent.setValue(UPDATE_SQL_COLOR_KEY, getUpdateColorRGB(), JBColor.RED.getRGB());
-        propertiesComponent.setValue(SELECT_SQL_COLOR_KEY, getSelectColorRGB(), JBColor.RED.getRGB());
+        propertiesComponent.setValue(INSERT_SQL_COLOR_KEY, getInsertColorRGB(), ConsoleViewContentType.ERROR_OUTPUT.getAttributes().getForegroundColor().getRGB());
+        propertiesComponent.setValue(DELETE_SQL_COLOR_KEY, getDeleteColorRGB(), ConsoleViewContentType.ERROR_OUTPUT.getAttributes().getForegroundColor().getRGB());
+        propertiesComponent.setValue(UPDATE_SQL_COLOR_KEY, getUpdateColorRGB(), ConsoleViewContentType.ERROR_OUTPUT.getAttributes().getForegroundColor().getRGB());
+        propertiesComponent.setValue(SELECT_SQL_COLOR_KEY, getSelectColorRGB(), ConsoleViewContentType.ERROR_OUTPUT.getAttributes().getForegroundColor().getRGB());
 
 
         manager.setPreparing(preparing);

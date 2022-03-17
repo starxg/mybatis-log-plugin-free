@@ -2,6 +2,7 @@ package com.starxg.mybatislog;
 
 import java.util.*;
 
+import com.intellij.execution.ui.ConsoleViewContentType;
 import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.ui.JBColor;
 import org.apache.commons.collections.CollectionUtils;
@@ -108,7 +109,7 @@ public class MyBatisLogConsoleFilter implements Filter {
             key = "unknown";
         }
 
-        manager.println(logPrefix, wholeSql, PropertiesComponent.getInstance(project).getInt(key, JBColor.RED.getRGB()));
+        manager.println(logPrefix, wholeSql, PropertiesComponent.getInstance(project).getInt(key, ConsoleViewContentType.ERROR_OUTPUT.getAttributes().getForegroundColor().getRGB()));
 
         return null;
     }
