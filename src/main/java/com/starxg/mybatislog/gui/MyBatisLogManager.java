@@ -34,6 +34,7 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.openapi.wm.ex.ToolWindowManagerListener;
+import com.intellij.ui.JBColor;
 import com.intellij.ui.content.Content;
 import com.intellij.util.messages.MessageBusConnection;
 import com.starxg.mybatislog.BasicFormatter;
@@ -45,11 +46,11 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 
 import static com.starxg.mybatislog.MyBatisLogConsoleFilter.*;
 
@@ -63,8 +64,9 @@ public class MyBatisLogManager implements Disposable {
     private static final Key<MyBatisLogManager> KEY = Key.create(MyBatisLogManager.class.getName());
     private static final BasicFormatter FORMATTER = new BasicFormatter();
 
+    private final Map<Integer, ConsoleViewContentType> consoleViewContentTypes = new ConcurrentHashMap<>();
 
-    private final ConsoleView consoleView;
+    private final ConsoleViewImpl consoleView;
     private final Project project;
     private final RunContentDescriptor descriptor;
 
@@ -129,7 +131,7 @@ public class MyBatisLogManager implements Disposable {
         getToolWindow().activate(null);
     }
 
-    private ConsoleView createConsoleView() {
+    private ConsoleViewImpl createConsoleView() {
         TextConsoleBuilder consoleBuilder = TextConsoleBuilderFactory.getInstance().createBuilder(project);
         final ConsoleViewImpl console = (ConsoleViewImpl) consoleBuilder.getConsole();
         // init editor
@@ -143,12 +145,12 @@ public class MyBatisLogManager implements Disposable {
 
     private ActionGroup createActionToolbar() {
 
-        final ConsoleViewImpl consoleView = (ConsoleViewImpl) this.consoleView;
+        final ConsoleViewImpl consoleView = this.consoleView;
 
         final DefaultActionGroup actionGroup = new DefaultActionGroup();
         actionGroup.add(new RerunAction());
         actionGroup.add(new StopAction(this));
-        actionGroup.add(new FilterAction(this));
+        actionGroup.add(new SettingsAction(this));
         actionGroup.addSeparator();
         actionGroup.add(new PreviousSqlAction(consoleView));
         actionGroup.add(new NextSqlAction(consoleView));
@@ -209,13 +211,13 @@ public class MyBatisLogManager implements Disposable {
         return RunnerLayoutUi.Factory.getInstance(project).create("MyBatis Log", "MyBatis Log", "MyBatis Log", project);
     }
 
-    public void println(String logPrefix, String sql) {
+    public void println(String logPrefix, String sql,int rgb) {
 
-        consoleView.print(String.format("-- %s -- %s\n", counter.incrementAndGet(), logPrefix),
-                ConsoleViewContentType.USER_INPUT);
+        final ConsoleViewContentType consoleViewContentType = consoleViewContentTypes.computeIfAbsent(rgb, k -> new ConsoleViewContentType(String.valueOf(rgb), new TextAttributes(new JBColor(rgb, rgb), null, null, null, Font.PLAIN)));
 
-        consoleView.print(String.format("%s\n", isFormat() ? FORMATTER.format(sql) : StringUtils.removeEnd(sql, "\n")),
-                ConsoleViewContentType.ERROR_OUTPUT);
+        consoleView.print(String.format("-- %s -- %s\n", counter.incrementAndGet(), logPrefix), ConsoleViewContentType.USER_INPUT);
+
+        consoleView.print(String.format("%s\n", isFormat() ? FORMATTER.format(sql) : StringUtils.removeEnd(sql, "\n")), consoleViewContentType);
 
     }
 
